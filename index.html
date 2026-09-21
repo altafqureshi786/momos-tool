@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Label &amp; QR Generator</title>
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #EFEBE2;
+    color: #1E2420;
+    display: flex;
+    justify-content: center;
+    padding: 32px 20px;
+  }
+  .wrap { width: 100%; max-width: 420px; }
+  .eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    color: #4A7C6B;
+    font-weight: 600;
+    margin: 0 0 8px;
+  }
+  h1 {
+    font-size: 2rem;
+    line-height: 1.15;
+    font-weight: 700;
+    color: #161B18;
+    margin: 0 0 16px;
+  }
+  .lead {
+    color: #5C6660;
+    font-size: 15px;
+    line-height: 1.5;
+    margin: 0 0 24px;
+  }
+  .card {
+    background: #fff;
+    border: 1px solid #DCD5C6;
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+  label.field-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: #7A7267;
+    margin-bottom: 8px;
+  }
+  select, .date-display, .text-input {
+    width: 100%;
+    border-radius: 12px;
+    padding: 14px 40px 14px 16px;
+    font-size: 15px;
+    color: #161B18;
+    background: #fff;
+    appearance: none;
+    -webkit-appearance: none;
+    border: 1px solid #DCD5C6;
+  }
+  .text-input { padding: 14px 16px; margin-bottom: 12px; }
+  select { border: 2px solid #2E5945; }
+  #typeSelect { margin-bottom: 20px; }
+  .select-wrap, .date-wrap { position: relative; margin-bottom: 12px; }
+  .select-wrap::after, .date-wrap::after {
+    content: "";
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    width: 8px;
+    height: 8px;
+    border-right: 2px solid #7A7267;
+    border-bottom: 2px solid #7A7267;
+    transform: translateY(-70%) rotate(45deg);
+    pointer-events: none;
+  }
+  .date-manual {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .date-manual input {
+    border: 1px solid #DCD5C6;
+    border-radius: 12px;
+    padding: 14px 12px;
+    font-size: 15px;
+    color: #161B18;
+    text-align: center;
+    min-width: 0;
+  }
+  #ddInput, #mmInput { flex: 1; }
+  #yyyyInput { flex: 1.4; }
+  .date-manual input:focus, .text-input:focus {
+    outline: none;
+    border-color: #2E5945;
+    border-width: 2px;
+  }
+  .date-sep { color: #7A7267; font-size: 15px; }
+  .tags { display: flex; gap: 8px; margin-bottom: 24px; }
+  .tag {
+    font-size: 12px;
+    background: #F1EDE3;
+    color: #5C6660;
+    padding: 6px 12px;
+    border-radius: 999px;
+  }
+  .code-box {
+    background: #161B18;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+  .code-text {
+    font-family: "SF Mono", "Roboto Mono", monospace;
+    font-size: 22px;
+    letter-spacing: 0.02em;
+    word-break: break-all;
+    margin: 0 0 12px;
+  }
+  .code-text .plu { color: #7FD1AE; }
+  .code-text .wt { color: #F0C889; }
+  .code-text .dt { color: #F0A0A8; }
+  .copy-btn, .action-btn {
+    width: 100%;
+    background: #2E5945;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  .copy-btn:hover, .action-btn:hover { background: #254A39; }
+  .action-btn.secondary {
+    background: #F1EDE3;
+    color: #4A4238;
+  }
+  .action-btn.secondary:hover { background: #E6E0D2; }
+  .btn-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+  }
+  .btn-row .action-btn { flex: 1; min-width: 100px; }
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 16px;
+    font-size: 12px;
+    color: #7A7267;
+    margin-bottom: 24px;
+  }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .swatch { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+  .qr-frame {
+    display: flex;
+    justify-content: center;
+    background: #F8F6F0;
+    border: 1px solid #DCD5C6;
+    border-radius: 12px;
+    padding: 20px;
+  }
+  #qrCanvas { border-radius: 4px; max-width: 100%; height: auto; }
+  .qr-frame.empty { color: #9A9285; font-size: 13px; padding: 40px 20px; }
+  .customize-row {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+  .color-field { flex: 1; }
+  .color-field label {
+    display: block;
+    font-size: 12px;
+    color: #7A7267;
+    margin-bottom: 6px;
+  }
+  .color-field input[type="color"] {
+    width: 100%;
+    height: 40px;
+    border: 1px solid #DCD5C6;
+    border-radius: 10px;
+    padding: 3px;
+    background: #fff;
+    cursor: pointer;
+  }
+  .file-input-wrap {
+    margin-bottom: 16px;
+  }
+  input[type="file"] {
+    width: 100%;
+    font-size: 13px;
+    color: #5C6660;
+  }
+  .history-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .history-head h2 {
+    font-size: 15px;
+    font-weight: 700;
+    color: #161B18;
+    margin: 0;
+  }
+  .clear-btn {
+    background: none;
+    border: none;
+    color: #A0453D;
+    font-size: 13px;
+    cursor: pointer;
+    padding: 4px 8px;
+  }
+  .history-item {
+    border: 1px solid #EDE8DC;
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 8px;
+    font-size: 13px;
+  }
+  .history-item b {
+    display: block;
+    color: #161B18;
+    margin-bottom: 2px;
+  }
+  .history-item .hdata {
+    color: #7A7267;
+    word-break: break-all;
+    display: block;
+    margin-bottom: 2px;
+  }
+  .history-item .htime {
+    color: #A79E90;
+    font-size: 11px;
+    display: block;
+    margin-bottom: 8px;
+  }
+  .history-item button {
+    background: #F1EDE3;
+    color: #4A4238;
+    border: none;
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .history-empty { color: #9A9285; font-size: 13px; }
+</style>
+</head>
+<body>
+<div id="blockOverlay" style="display:none; position:fixed; inset:0; background:#EFEBE2; z-index:999; align-items:center; justify-content:center; text-align:center; padding:24px;">
+  <div>
+    <p style="font-size:18px; font-weight:600; color:#161B18; margin-bottom:8px;">Tool is currently disabled</p>
+    <p style="font-size:14px; color:#5C6660;">Please contact the administrator for access.</p>
+  </div>
+</div>
+<div id="appRoot">
+<div class="wrap">
+  <p class="eyebrow">HUB OPS · LABEL &amp; QR TOOLS</p>
+  <h1>Label &amp; QR Generator</h1>
+  <p class="lead">Generate a product label code, or create a QR for a link, WhatsApp chat, or Wi‑Fi network — with logo, colors, downloads, and history.</p>
+
+  <div class="card">
+    <label class="field-label">QR TYPE</label>
+    <div class="select-wrap" id="typeSelect">
+      <select id="type">
+        <option value="label">Label Code (Product)</option>
+        <option value="text">Text / URL</option>
+        <option value="whatsapp">WhatsApp</option>
+        <option value="wifi">Wi‑Fi</option>
+      </select>
+    </div>
+
+    <!-- Label Code fields -->
+    <div id="labelFields">
+      <label class="field-label">PRODUCT</label>
+      <div class="select-wrap">
+        <select id="product"></select>
+      </div>
+      <div class="tags">
+        <span class="tag" id="pluTag"></span>
+        <span class="tag" id="weightTag"></span>
+      </div>
+
+      <label class="field-label">USE-BY DATE</label>
+      <div class="date-manual">
+        <input type="text" id="ddInput" maxlength="2" placeholder="DD" inputmode="numeric" />
+        <span class="date-sep">/</span>
+        <input type="text" id="mmInput" maxlength="2" placeholder="MM" inputmode="numeric" />
+        <span class="date-sep">/</span>
+        <input type="text" id="yyyyInput" maxlength="4" placeholder="YYYY" inputmode="numeric" />
+      </div>
+
+      <label class="field-label">GENERATED CODE</label>
+      <div class="code-box">
+        <p class="code-text" id="codeText"></p>
+        <button class="copy-btn" id="copyBtn">Copy</button>
+      </div>
+      <div class="legend">
+        <span><span class="swatch" style="background:#7FD1AE"></span>PLU (6)</span>
+        <span><span class="swatch" style="background:#F0C889"></span>Weight (5)</span>
+        <span><span class="swatch" style="background:#F0A0A8"></span>Use-by date (6, DDMMYY)</span>
+      </div>
+    </div>
+
+    <!-- Text/URL fields -->
+    <div id="textFields" style="display:none;">
+      <label class="field-label">TEXT OR URL</label>
+      <input type="text" id="textInput" class="text-input" placeholder="https://example.com" />
+    </div>
+
+    <!-- WhatsApp fields -->
+    <div id="whatsappFields" style="display:none;">
+      <label class="field-label">PHONE NUMBER (WITH COUNTRY CODE)</label>
+      <input type="text" id="waPhone" class="text-input" placeholder="919876543210" inputmode="numeric" />
+      <label class="field-label">MESSAGE (OPTIONAL)</label>
+      <input type="text" id="waMessage" class="text-input" placeholder="Hello!" />
+    </div>
+
+    <!-- Wi-Fi fields -->
+    <div id="wifiFields" style="display:none;">
+      <label class="field-label">NETWORK NAME (SSID)</label>
+      <input type="text" id="wifiSsid" class="text-input" placeholder="My WiFi" />
+      <label class="field-label">PASSWORD</label>
+      <input type="text" id="wifiPass" class="text-input" placeholder="WiFi password" />
+      <label class="field-label">SECURITY</label>
+      <div class="select-wrap">
+        <select id="wifiSecurity">
+          <option value="WPA">WPA/WPA2</option>
+          <option value="WEP">WEP</option>
+          <option value="nopass">None</option>
+        </select>
+      </div>
+    </div>
+
+    <label class="field-label">QR CODE</label>
+    <div class="customize-row">
+      <div class="color-field">
+        <label for="fgColor">QR Color</label>
+        <input type="color" id="fgColor" value="#161B18" />
+      </div>
+      <div class="color-field">
+        <label for="bgColor">Background</label>
+        <input type="color" id="bgColor" value="#ffffff" />
+      </div>
+    </div>
+    <div class="file-input-wrap">
+      <label class="field-label">LOGO (OPTIONAL)</label>
+      <input type="file" id="logoInput" accept="image/*" />
+    </div>
+
+    <div class="qr-frame" id="qrFrame">
+      <canvas id="qrCanvas" width="260" height="260"></canvas>
+    </div>
+
+    <div class="btn-row">
+      <button class="action-btn" id="generateBtn">Generate QR</button>
+      <button class="action-btn secondary" id="pngBtn">Download PNG</button>
+      <button class="action-btn secondary" id="svgBtn">Download SVG</button>
+      <button class="action-btn secondary" id="saveHistoryBtn">Save to History</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="history-head">
+      <h2>QR History</h2>
+      <button class="clear-btn" id="clearHistoryBtn">Clear</button>
+    </div>
+    <div id="historyList"></div>
+  </div>
+
+  <p style="text-align:center; font-size:12px; color:#9A9285; margin-top:20px;">Owned and managed by Altaf</p>
+</div>
+</div>
+
+<script>
+  const STATUS_URL = "status.txt";
+  const blockOverlay = document.getElementById("blockOverlay");
+  const appRoot = document.getElementById("appRoot");
+
+  // Fail-closed: hide the tool immediately, only show it if status.txt says "on"
+  appRoot.style.display = "none";
+  blockOverlay.style.display = "flex";
+
+  function checkStatus() {
+    fetch(STATUS_URL + "?t=" + Date.now(), { cache: "no-store" })
+      .then((res) => res.text())
+      .then((text) => {
+        const status = text.trim().toLowerCase();
+        if (status === "on") {
+          appRoot.style.display = "block";
+          blockOverlay.style.display = "none";
+        } else {
+          appRoot.style.display = "none";
+          blockOverlay.style.display = "flex";
+        }
+      })
+      .catch(() => {
+        appRoot.style.display = "none";
+        blockOverlay.style.display = "flex";
+      });
+  }
+  checkStatus();
+  setInterval(checkStatus, 5000);
+
+  // ---------- Product / Label Code data ----------
+  const PRODUCTS = [
+    { name: "Chicken & Cheese Momos (20pc)", plu: "299867", weight: 500 },
+    { name: "Chicken & Cheese Momos (8pc)", plu: "291009", weight: 200 },
+    { name: "Chicken Jhol Momos (6pcs)", plu: "508714", weight: 150 },
+    { name: "Classic Prawn Momos (8pc)", plu: "794367", weight: 200 },
+    { name: "Korean Chicken Momos (20pc)", plu: "385077", weight: 500 },
+    { name: "Loaded Chicken Momos (16pc)", plu: "754637", weight: 400 },
+    { name: "Loaded Chicken Momos (6pc)", plu: "182499", weight: 150 },
+    { name: "Loaded Chicken Momos (8pcs)", plu: "510624", weight: 200 },
+  ];
+
+  const typeSelect = document.getElementById("type");
+  const labelFields = document.getElementById("labelFields");
+  const textFields = document.getElementById("textFields");
+  const whatsappFields = document.getElementById("whatsappFields");
+  const wifiFields = document.getElementById("wifiFields");
+
+  const productSelect = document.getElementById("product");
+  const pluTag = document.getElementById("pluTag");
+  const weightTag = document.getElementById("weightTag");
+  const ddInput = document.getElementById("ddInput");
+  const mmInput = document.getElementById("mmInput");
+  const yyyyInput = document.getElementById("yyyyInput");
+  const codeText = document.getElementById("codeText");
+  const copyBtn = document.getElementById("copyBtn");
+
+  const textInput = document.getElementById("textInput");
+  const waPhone = document.getElementById("waPhone");
+  const waMessage = document.getElementById("waMessage");
+  const wifiSsid = document.getElementById("wifiSsid");
+  const wifiPass = document.getElementById("wifiPass");
+  const wifiSecurity = document.getElementById("wifiSecurity");
+
+  const fgColor = document.getElementById("fgColor");
+  const bgColor = document.getElementById("bgColor");
+  const logoInput = document.getElementById("logoInput");
+  const qrCanvas = document.getElementById("qrCanvas");
+  const qrFrame = document.getElementById("qrFrame");
+  const generateBtn = document.getElementById("generateBtn");
+  const pngBtn = document.getElementById("pngBtn");
+  const svgBtn = document.getElementById("svgBtn");
+  const saveHistoryBtn = document.getElementById("saveHistoryBtn");
+  const historyList = document.getElementById("historyList");
+  const clearHistoryBtn = document.getElementById("clearHistoryBtn");
+
+  let current = { text: "", label: "" };
+
+  PRODUCTS.forEach((p, i) => {
+    const opt = document.createElement("option");
+    opt.value = i;
+    opt.textContent = `${p.name} — PLU ${p.plu}`;
+    productSelect.appendChild(opt);
+  });
+
+  function pad(n, len) { return String(n).padStart(len, "0"); }
+
+  const today = new Date();
+  ddInput.value = pad(today.getDate(), 2);
+  mmInput.value = pad(today.getMonth() + 1, 2);
+  yyyyInput.value = today.getFullYear();
+
+  function sanitizeDigits(input, maxLen) {
+    input.value = input.value.replace(/\D/g, "").slice(0, maxLen);
+  }
+
+  // ---------- Field visibility per type ----------
+  function updateFieldVisibility() {
+    const t = typeSelect.value;
+    labelFields.style.display = t === "label" ? "block" : "none";
+    textFields.style.display = t === "text" ? "block" : "none";
+    whatsappFields.style.display = t === "whatsapp" ? "block" : "none";
+    wifiFields.style.display = t === "wifi" ? "block" : "none";
+  }
+
+  // ---------- Build data string per type ----------
+  function getLabelCodeParts() {
+    const product = PRODUCTS[productSelect.value];
+    pluTag.textContent = `PLU ${product.plu}`;
+    weightTag.textContent = `${product.weight}g`;
+
+    let d = ddInput.value.padStart(2, "0") || "00";
+    let m = mmInput.value.padStart(2, "0") || "00";
+    let y = yyyyInput.value.padStart(4, "0") || "0000";
+
+    const pluPart = pad(product.plu, 6);
+    const weightPart = pad(product.weight, 5);
+    const datePart = `${d}${m}${y.slice(-2)}`;
+    const full = pluPart + weightPart + datePart;
+
+    codeText.innerHTML =
+      `<span class="plu">${pluPart}</span>` +
+      `<span class="wt">${weightPart}</span>` +
+      `<span class="dt">${datePart}</span>`;
+
+    copyBtn.onclick = () => {
+      navigator.clipboard.writeText(full).then(() => {
+        copyBtn.textContent = "Copied";
+        setTimeout(() => (copyBtn.textContent = "Copy"), 1500);
+      });
+    };
+
+    return { text: full, label: `${product.name} — ${d}/${m}/${y}` };
+  }
+
+  function getData() {
+    const t = typeSelect.value;
+    if (t === "label") {
+      return getLabelCodeParts();
+    }
+    if (t === "whatsapp") {
+      const phone = waPhone.value.replace(/\D/g, "");
+      const message = waMessage.value;
+      if (!phone) throw new Error("Enter a phone number.");
+      return { text: `https://wa.me/${phone}?text=${encodeURIComponent(message)}`, label: `WhatsApp: ${phone}` };
+    }
+    if (t === "wifi") {
+      const ssid = wifiSsid.value;
+      const pass = wifiPass.value;
+      const security = wifiSecurity.value;
+      if (!ssid) throw new Error("Enter the Wi-Fi network name.");
+      const esc = (s) => s.replace(/([\\;,:"])/g, "\\$1");
+      return { text: `WIFI:T:${security};S:${esc(ssid)};P:${esc(pass)};;`, label: `Wi-Fi: ${ssid}` };
+    }
+    const text = textInput.value.trim();
+    if (!text) throw new Error("Enter text or a URL.");
+    return { text, label: text };
+  }
+
+  // ---------- QR generation with color + logo ----------
+  function drawLogo() {
+    if (!logoInput.files[0]) return;
+    const img = new Image();
+    img.onload = () => {
+      const size = qrCanvas.width * 0.22;
+      const x = (qrCanvas.width - size) / 2;
+      const y = (qrCanvas.height - size) / 2;
+      const pad = 8;
+      const box = size + pad * 2;
+      const ctx = qrCanvas.getContext("2d");
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(x - pad, y - pad, box, box);
+      ctx.drawImage(img, x, y, size, size);
+    };
+    img.src = URL.createObjectURL(logoInput.files[0]);
+  }
+
+  async function generate() {
+    try {
+      current = getData();
+      qrFrame.classList.remove("empty");
+      await QRCode.toCanvas(qrCanvas, current.text, {
+        width: 260,
+        margin: 2,
+        color: { dark: fgColor.value, light: bgColor.value },
+        errorCorrectionLevel: "H",
+      });
+      drawLogo();
+    } catch (e) {
+      alert(e.message);
+    }
+  }
+
+  function downloadPNG() {
+    if (!current.text) return;
+    const a = document.createElement("a");
+    a.download = "qr-code.png";
+    a.href = qrCanvas.toDataURL("image/png");
+    a.click();
+  }
+
+  function downloadSVG() {
+    if (!current.text) return;
+    QRCode.toString(
+      current.text,
+      { type: "svg", width: 260, margin: 2, color: { dark: fgColor.value, light: bgColor.value }, errorCorrectionLevel: "H" },
+      (err, svg) => {
+        if (err) return alert("Could not create SVG.");
+        const blob = new Blob([svg], { type: "image/svg+xml" });
+        const a = document.createElement("a");
+        a.download = "qr-code.svg";
+        a.href = URL.createObjectURL(blob);
+        a.click();
+      }
+    );
+  }
+
+  // ---------- History (localStorage) ----------
+  function saveHistory() {
+    if (!current.text) return;
+    const items = JSON.parse(localStorage.getItem("qr_history") || "[]");
+    items.unshift({ text: current.text, label: current.label, time: new Date().toLocaleString() });
+    localStorage.setItem("qr_history", JSON.stringify(items.slice(0, 20)));
+    renderHistory();
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, (m) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[m]));
+  }
+
+  function renderHistory() {
+    const items = JSON.parse(localStorage.getItem("qr_history") || "[]");
+    historyList.innerHTML = items.length
+      ? items
+          .map(
+            (x, i) =>
+              `<div class="history-item"><b>${escapeHtml(x.label)}</b><span class="hdata">${escapeHtml(x.text)}</span><span class="htime">${escapeHtml(x.time)}</span><button onclick="useHistory(${i})">Use again</button></div>`
+          )
+          .join("")
+      : `<p class="history-empty">No saved QR codes yet.</p>`;
+  }
+
+  window.useHistory = function (i) {
+    const items = JSON.parse(localStorage.getItem("qr_history") || "[]");
+    if (!items[i]) return;
+    current = items[i];
+    qrFrame.classList.remove("empty");
+    QRCode.toCanvas(qrCanvas, current.text, {
+      width: 260,
+      margin: 2,
+      color: { dark: fgColor.value, light: bgColor.value },
+      errorCorrectionLevel: "H",
+    });
+  };
+
+  // ---------- Wire up events ----------
+  typeSelect.addEventListener("change", () => {
+    updateFieldVisibility();
+    generate();
+  });
+
+  productSelect.addEventListener("change", generate);
+  [ddInput, mmInput].forEach((el) => {
+    el.addEventListener("input", () => {
+      sanitizeDigits(el, 2);
+      generate();
+    });
+  });
+  yyyyInput.addEventListener("input", () => {
+    sanitizeDigits(yyyyInput, 4);
+    generate();
+  });
+
+  generateBtn.addEventListener("click", generate);
+  pngBtn.addEventListener("click", downloadPNG);
+  svgBtn.addEventListener("click", downloadSVG);
+  saveHistoryBtn.addEventListener("click", saveHistory);
+  clearHistoryBtn.addEventListener("click", () => {
+    localStorage.removeItem("qr_history");
+    renderHistory();
+  });
+
+  updateFieldVisibility();
+  renderHistory();
+  generate();
+</script>
+</body>
+</html>
